@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Homelab Infrastructure Portfolio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg:        #0d1117;
+      --bg-card:   #161b22;
+      --bg-subtle: #1c2128;
+      --border:    #30363d;
+      --border-hi: #58a6ff;
+      --text:      #e6edf3;
+      --text-dim:  #8b949e;
+      --text-faint:#484f58;
+      --green:     #3fb950;
+      --green-dim: #1a4a1f;
+      --blue:      #58a6ff;
+      --blue-dim:  #1a3050;
+      --orange:    #f0883e;
+      --orange-dim:#3d2010;
+      --red:       #f85149;
+      --purple:    #bc8cff;
+      --yellow:    #d29922;
+      --cyan:      #39c5cf;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── SCANLINE TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,17,23,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+    }
+
+    .nav-brand {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--green);
+      letter-spacing: 0.02em;
+    }
+
+    .nav-brand span { color: var(--text-dim); }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-family: 'JetBrains Mono', monospace;
+      transition: color 0.15s;
+    }
+
+    nav a:hover { color: var(--blue); }
+
+    /* ── THREAT MODEL / ATTACK MATRIX ── */
+    .threat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .threat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      border-left: 3px solid var(--red);
+      transition: border-color 0.2s;
+    }
+
+    .threat-card:hover { border-color: var(--red); border-left-color: var(--red); }
+
+    .threat-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--red);
+      margin-bottom: 0.4rem;
+    }
+
+    .threat-mitigations {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+    }
+
+    .threat-mitigations li {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      padding-left: 1.1rem;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .threat-mitigations li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    /* ── FIREWALL RULE TABLE ── */
+    .fw-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .fw-table thead tr {
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .fw-table th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-faint);
+      padding: 0.6rem 0.85rem;
+      text-align: left;
+    }
+
+    .fw-table tbody tr {
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      transition: background 0.15s;
+    }
+
+    .fw-table tbody tr:hover { background: var(--bg-subtle); }
+
+    .fw-table td {
+      padding: 0.65rem 0.85rem;
+      vertical-align: middle;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+    }
+
+    .fw-action-pass { color: var(--green); font-weight: 700; }
+    .fw-action-block { color: var(--red); font-weight: 700; }
+    .fw-action-reject { color: var(--orange); font-weight: 700; }
+
+    .fw-src { color: var(--blue); }
+    .fw-dst { color: var(--cyan); }
+    .fw-note { color: var(--text-dim); font-family: 'Inter', sans-serif; font-size: 0.75rem; }
+
+    /* ── WAZUH RULES TABLE ── */
+    .rule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .rule-row {
+      display: grid;
+      grid-template-columns: 80px 120px 1fr auto;
+      gap: 1rem;
+      align-items: start;
+      padding: 0.85rem 1.1rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      background: var(--bg-card);
+      transition: background 0.15s;
+    }
+
+    .rule-row:last-child { border-bottom: none; }
+    .rule-row:hover { background: var(--bg-subtle); }
+
+    .rule-row.rule-header {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rule-col-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-faint);
+    }
+
+    .rule-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-faint);
+    }
+
+    .rule-trigger {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--orange);
+    }
+
+    .rule-desc {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      line-height: 1.45;
+    }
+
+    .sev-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.18rem 0.5rem;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    .sev-critical { background: rgba(248,81,73,0.2); color: var(--red); }
+    .sev-high     { background: rgba(240,136,62,0.2); color: var(--orange); }
+    .sev-medium   { background: rgba(210,153,34,0.2); color: var(--yellow); }
+    .sev-info     { background: rgba(88,166,255,0.15); color: var(--blue); }
+
+    /* ── ACCESS MATRIX ── */
+    .matrix-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      min-width: 500px;
+    }
+
+    .matrix-table th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-faint);
+      padding: 0.65rem 0.85rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+
+    .matrix-table th:first-child { text-align: left; }
+
+    .matrix-table td {
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid rgba(48,54,61,0.4);
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+    }
+
+    .matrix-table tr:last-child td { border-bottom: none; }
+    .matrix-table tr:hover td { background: var(--bg-subtle); }
+
+    .matrix-table td:first-child {
+      text-align: left;
+      color: var(--text);
+      font-weight: 600;
+      background: var(--bg-card);
+    }
+
+    .mx-allow { color: var(--green); }
+    .mx-deny  { color: var(--red); }
+    .mx-limit { color: var(--yellow); }
+
+    /* ── SURICATA DETAIL ── */
+    .suricata-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .sur-stat {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      text-align: center;
+    }
+
+    .sur-stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .sur-stat-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── INLINE CODE ── */
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.05rem 0.35rem;
+      color: var(--cyan);
+    }
+
+    /* ── SUBSECTION LABEL ── */
+    .subsection-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-faint);
+      margin: 2rem 0 0.85rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+    }
+
+    .subsection-label:first-of-type { margin-top: 0; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 5rem 2rem 4rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--green);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+      50% { opacity: 0.5; box-shadow: 0 0 3px var(--green); }
+    }
+
+    .hero h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 .accent { color: var(--blue); }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      color: var(--text-dim);
+      max-width: 620px;
+      line-height: 1.75;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── BADGE ROW ── */
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid;
+    }
+
+    .badge-green  { color: var(--green);  border-color: var(--green-dim);  background: rgba(63,185,80,0.07); }
+    .badge-blue   { color: var(--blue);   border-color: var(--blue-dim);   background: rgba(88,166,255,0.07); }
+    .badge-orange { color: var(--orange); border-color: var(--orange-dim); background: rgba(240,136,62,0.07); }
+    .badge-purple { color: var(--purple); border-color: rgba(188,140,255,0.3); background: rgba(188,140,255,0.07); }
+    .badge-cyan   { color: var(--cyan);   border-color: rgba(57,197,207,0.3);  background: rgba(57,197,207,0.07); }
+
+    /* ── CTA ROW ── */
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 3rem;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+    }
+
+    .cta-primary {
+      background: var(--green);
+      color: #0d1117;
+      border-color: var(--green);
+    }
+    .cta-primary:hover { background: #4fd862; }
+
+    .cta-secondary {
+      color: var(--text);
+      background: var(--bg-card);
+    }
+    .cta-secondary:hover { border-color: var(--border-hi); color: var(--blue); }
+
+    /* ── STATS ROW ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      max-width: 900px;
+      margin: 0 auto 4rem;
+      padding: 0 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1.4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-color, var(--blue));
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── SECTION ── */
+    section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header h2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .section-icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    /* ── DIAGRAM SECTION ── */
+    .diagram-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2rem;
+      overflow-x: auto;
+    }
+
+    .diagram-container .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── NETWORK TABLE ── */
+    .net-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .net-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .net-card:hover { border-color: var(--border-hi); }
+
+    .net-card .vlan-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      margin-bottom: 0.6rem;
+      display: inline-block;
+    }
+
+    .vlan-lan    { background: rgba(88,166,255,0.15); color: var(--blue); }
+    .vlan-iot    { background: rgba(240,136,62,0.15); color: var(--orange); }
+    .vlan-mgmt   { background: rgba(63,185,80,0.15);  color: var(--green); }
+
+    .net-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .net-subnet {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--cyan);
+      margin-bottom: 0.6rem;
+    }
+
+    .net-desc {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── VM TABLE ── */
+    .vm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .vm-table thead tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .vm-table th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-faint);
+      padding: 0.6rem 1rem;
+      text-align: left;
+    }
+
+    .vm-table tbody tr {
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      transition: background 0.15s;
+    }
+
+    .vm-table tbody tr:hover { background: var(--bg-subtle); }
+
+    .vm-table td {
+      padding: 0.85rem 1rem;
+      vertical-align: top;
+    }
+
+    .vm-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .vm-role-pill {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      margin-top: 0.3rem;
+    }
+
+    .role-firewall { background: rgba(248,81,73,0.15); color: var(--red); }
+    .role-siem     { background: rgba(240,136,62,0.15); color: var(--orange); }
+    .role-access   { background: rgba(88,166,255,0.15); color: var(--blue); }
+    .role-bastion  { background: rgba(63,185,80,0.15);  color: var(--green); }
+    .role-web      { background: rgba(188,140,255,0.15); color: var(--purple); }
+
+    .vm-network-tag {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    .vm-table-note {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    /* ── SECURITY STACK ── */
+    .security-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .sec-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.4rem 1.5rem;
+      transition: border-color 0.2s;
+    }
+
+    .sec-card:hover { border-color: var(--border-hi); }
+
+    .sec-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .sec-icon {
+      font-size: 1.3rem;
+      line-height: 1;
+      margin-top: 0.1rem;
+    }
+
+    .sec-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .sec-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .sec-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sec-features li {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      padding-left: 1.1rem;
+      position: relative;
+      line-height: 1.45;
+    }
+
+    .sec-features li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-size: 0.7rem;
+    }
+
+    /* ── LOG FLOW ── */
+    .log-flow {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+    }
+
+    .flow-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .flow-node {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.7rem 1.1rem;
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .flow-node-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .flow-node-detail {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    .flow-arrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .flow-fork {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 2;
+    }
+
+    /* ── SKILLS ── */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .skill-group {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .skill-group-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-bottom: 0.85rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .skill-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      transition: all 0.15s;
+    }
+
+    .skill-tag:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    /* ── DESIGN DECISIONS ── */
+    .decisions {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .decision {
+      background: var(--bg-card);
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .decision:last-child { border-bottom: none; }
+    .decision:hover { background: var(--bg-subtle); }
+
+    .decision-q {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 0.5rem;
+    }
+
+    .decision-q::before { content: 'Q: '; color: var(--text-faint); }
+
+    .decision-a {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-faint);
+    }
+
+    footer a { color: var(--blue); text-decoration: none; }
+    footer .footer-links { display: flex; gap: 1.25rem; justify-content: center; margin-bottom: 0.75rem; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav ul { display: none; }
+      .flow-row { flex-direction: column; align-items: stretch; }
+      .flow-arrow { transform: rotate(90deg); text-align: center; }
+    }
+
+    /* Mermaid dark theme override */
+    .mermaid svg { max-width: 100%; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">~/homelab<span> $</span></div>
+  <ul>
+    <li><a href="#network">Network</a></li>
+    <li><a href="#vms">VMs</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#threats">Threats</a></li>
+    <li><a href="#logs">Log Flow</a></li>
+    <li><a href="#skills">Skills</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-eyebrow">Production Homelab — Live &amp; Operational</div>
+  <h1>Enterprise-Grade<br><span class="accent">Home Network</span><br>Infrastructure</h1>
+  <p class="hero-desc">
+    A fully segmented, monitored, and documented home network built to practice the day-to-day work of a SOC analyst: writing detection logic, correlating logs across a real attack surface, and designing access controls where every exception is deliberate and documented — not assumed. This page walks through the architecture, the threat model behind it, and the decisions made along the way.
+  </p>
+  <div class="badges">
+    <span class="badge badge-green">pfSense Firewall</span>
+    <span class="badge badge-orange">Wazuh SIEM</span>
+    <span class="badge badge-red" style="color:var(--red);border-color:rgba(248,81,73,0.3);background:rgba(248,81,73,0.07)">Suricata IDS</span>
+    <span class="badge badge-blue">Hyper-V</span>
+    <span class="badge badge-purple">OpenVPN</span>
+    <span class="badge badge-cyan">AD DS</span>
+    <span class="badge badge-green">pfBlockerNG</span>
+    <span class="badge badge-orange">Slack Alerting</span>
+	<span class="badge badge-blue">Nginx</span>
+	<span class="badge badge-orange">Ubuntu</span>
+	<span class="badge badge-green">Debian</span>
+  </div>
+  <div class="cta-row">
+    <a href="mailto:chris@bates.contact" class="cta-btn cta-primary">✉ Contact Me</a>
+    <a href="https://linkedin.com/in/chris-bat3s" class="cta-btn cta-secondary">LinkedIn</a>
+    <a href="https://github.com/AlteredMinds" class="cta-btn cta-secondary">GitHub</a>
+  </div>
+</header>
+
+<!-- DIAGRAM -->
+<section id="diagram">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(88,166,255,0.1)">🗺️</div>
+    <h2>Network Topology</h2>
+  </div>
+  <div class="diagram-container">
+    <div class="mermaid">
+flowchart TD
+  Internet((Internet)) === GW[Gateway Router]
+  GW === NIC1{WAN NIC}
+
+  subgraph Host["Windows Server — Hyper-V — Active Directory"]
+    subgraph Physical["Physical Interfaces"]
+      NIC1
+      NIC2{LAN NIC}
+      NIC3{MGMT NIC}
+      NIC4{IOT NIC}
+    end
+    subgraph vSwitches["Virtual Switches"]
+      vWAN{{"vSwitch WAN"}}
+      vMGMT{{"vSwitch MGMT"}}
+      vLAN{{"vSwitch LAN"}}
+      vIOT{{"vSwitch IoT"}}
+    end
+    vLAN -.- HostAdapter(("Host vAdapter"))
+    subgraph VMs["Virtual Machines"]
+      pfSense[(pfSense\nFirewall + Router)]
+      VM2>Rustdesk\nRemote Access]
+      VM3>Web Server]
+      Bastion>Bastion Host]
+      Wazuh>Wazuh SIEM]
+    end
+    NIC1 --- vWAN
+    NIC2 --- vLAN
+    NIC3 --- vMGMT
+    NIC4 --- vIOT
+    vWAN --- pfSense
+    vLAN --- pfSense
+    vMGMT --- pfSense
+    vIOT --- pfSense
+    vLAN -.- VM2
+    vLAN -.- VM3
+    vMGMT -.- Bastion
+    vMGMT -.- Wazuh
+  end
+
+  Switch[Managed Switch]
+  NIC2 ===|VLAN 10: LAN| Switch
+  NIC3 ===|VLAN 99: MGMT| Switch
+  NIC4 ===|VLAN 20: IoT| Switch
+  Switch ===|802.1Q Trunk| AP[Access Point]
+  SSID1((SSID: LAN))
+  SSID3((SSID: IoT))
+  AP -.- SSID1
+  AP -.- SSID3
+    </div>
+  </div>
+</section>
+
+<!-- NETWORK SEGMENTS -->
+<section id="network">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(63,185,80,0.1)">🔀</div>
+    <h2>Network Segments</h2>
+  </div>
+  <div class="net-grid">
+    <div class="net-card">
+      <div class="vlan-badge vlan-lan">VLAN 10</div>
+      <div class="net-name">LAN</div>
+      <div class="net-subnet">192.168.1.0/24</div>
+      <div class="net-desc">Trusted workstations, servers, and LAN-facing services. Default deny to MGMT and IoT at the firewall.</div>
+    </div>
+    <div class="net-card">
+      <div class="vlan-badge vlan-iot">VLAN 20</div>
+      <div class="net-name">IoT</div>
+      <div class="net-subnet">192.168.20.0/24</div>
+      <div class="net-desc">Isolated smart home devices. No route to LAN or MGMT — internet access only via pfSense policy.</div>
+    </div>
+    <div class="net-card">
+      <div class="vlan-badge vlan-mgmt">VLAN 99</div>
+      <div class="net-name">Management</div>
+      <div class="net-subnet">172.16.99.0/28</div>
+      <div class="net-desc">/28 by design — 16 addresses, minimal blast radius. Reachable only through the bastion host. Hosts Wazuh and infrastructure UIs.</div>
+    </div>
+  </div>
+
+  <div class="subsection-label">Inter-VLAN Access Matrix</div>
+  <div class="matrix-wrap">
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>From \ To</th>
+          <th>LAN</th>
+          <th>IoT</th>
+          <th>MGMT</th>
+          <th>Internet</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>LAN</td>
+          <td class="mx-allow">ALLOW</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-limit">EXCEPTION*</td>
+          <td class="mx-limit">FILTERED</td>
+        </tr>
+        <tr>
+          <td>IoT</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-allow">ALLOW</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-limit">FILTERED</td>
+        </tr>
+        <tr>
+          <td>MGMT</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-allow">ALLOW</td>
+          <td class="mx-limit">FILTERED</td>
+        </tr>
+        <tr>
+          <td>Internet</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-deny">DENY</td>
+          <td class="mx-allow">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:0.78rem;color:var(--text-dim);margin-top:0.75rem;line-height:1.6;">
+    * LAN → MGMT is default-deny. The single exception is scoped to one source host and one destination port — the designated Rustdesk session reaching the Bastion's admin interface — not LAN broadly. See <a href="#decisions" style="color:var(--blue)">Design Decisions</a> for the reasoning behind that exception.
+  </p>
+</section>
+
+<!-- VMs -->
+<section id="vms">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(188,140,255,0.1)">🖥️</div>
+    <h2>Virtual Machines</h2>
+  </div>
+  <p class="vm-table-note">
+    Five guest VMs run on a Windows Server Hyper-V host. The host itself doubles as the network's Active Directory Domain Controller (AD DS) — it isn't a separate guest, which is why it doesn't appear as its own row below, but it's what backs the LDAP authentication referenced throughout this page.
+  </p>
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+    <table class="vm-table">
+      <thead>
+        <tr>
+          <th>VM</th>
+          <th>Network</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="vm-name">pfSense</div>
+            <div><span class="vm-role-pill role-firewall">Firewall / Router</span></div>
+          </td>
+          <td>
+            <span class="vm-network-tag">WAN</span>
+            <span class="vm-network-tag">LAN</span>
+            <span class="vm-network-tag">MGMT</span>
+            <span class="vm-network-tag">IoT</span>
+          </td>
+          <td style="color:var(--text-dim);font-size:0.83rem">Central routing boundary. Runs Suricata IDS/IPS, pfBlockerNG DNS filtering, and OpenVPN. Exports logs to Wazuh via syslog.</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="vm-name">Rustdesk</div>
+            <div><span class="vm-role-pill role-access">Remote Access</span></div>
+          </td>
+          <td><span class="vm-network-tag">LAN</span></td>
+          <td style="color:var(--text-dim);font-size:0.83rem">Self-hosted remote desktop relay. No dependency on external relay infrastructure — all session traffic stays on-prem. Accessible via LAN.</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="vm-name">Web Server</div>
+            <div><span class="vm-role-pill role-web">Hosting</span></div>
+          </td>
+          <td><span class="vm-network-tag">LAN</span></td>
+          <td style="color:var(--text-dim);font-size:0.83rem">Internal web services and applications hosted within the LAN segment.<!-- TODO: name the actual 4 services here, e.g. status dashboard, internal wiki, file share, this portfolio site --></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="vm-name">Bastion Host</div>
+            <div><span class="vm-role-pill role-bastion">Jump Server</span></div>
+          </td>
+          <td><span class="vm-network-tag">MGMT</span></td>
+          <td style="color:var(--text-dim);font-size:0.83rem">Single point of ingress into the management VLAN. All infrastructure access — Wazuh UI, pfSense, switch UI, access point UI — routes through here. The only inbound path is a firewall rule scoped to one specific Rustdesk host on LAN and one destination port; everything else from LAN is dropped.</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="vm-name">Wazuh</div>
+            <div><span class="vm-role-pill role-siem">SIEM</span></div>
+          </td>
+          <td><span class="vm-network-tag">MGMT</span></td>
+          <td style="color:var(--text-dim);font-size:0.83rem">Aggregates security events from pfSense. LDAP-authenticated logins against the host's AD DS. Wazuh agents. Forwards alerts to Slack via webhook integration.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(248,81,73,0.1)">🛡️</div>
+    <h2>Security Stack</h2>
+  </div>
+
+  <!-- Overview cards -->
+  <div class="security-grid">
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">🔥</div>
+        <div>
+          <div class="sec-title">pfSense</div>
+          <div class="sec-subtitle">Firewall · Router · VPN Gateway · DNS</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li><strong style="color:var(--text)">Suricata IDS/IPS</strong> — Inline IDS mode on WAN; ET Open, Snort GPLv2, Feodo Botnet C2, Abuse.ch SSL</li>
+        <li><strong style="color:var(--text)">pfBlockerNG</strong> — DNSBL sinkhole + GeoIP blocking on inbound WAN</li>
+        <li><strong style="color:var(--text)">OpenVPN</strong> — Certificate-based remote access; split-tunnel to LAN subnet only</li>
+        <li><strong style="color:var(--text)">NoIP DDNS</strong> — Tracks WAN IP; keeps VPN endpoint hostname current</li>
+      </ul>
+    </div>
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">📡</div>
+        <div>
+          <div class="sec-title">Wazuh SIEM</div>
+          <div class="sec-subtitle">Log Aggregation · Correlation · Alerting</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>Ingests pfSense syslog — Suricata alerts, firewall drops, OpenVPN events, DHCP, Wazuh agents</li>
+        <li><strong style="color:var(--text)">LDAP authentication</strong> — Wazuh dashboard login backed by the AD DS role running on the Hyper-V host</li>
+        <li><strong style="color:var(--text)">Slack webhook</strong> — Severity-filtered alerts pushed to a dedicated channel</li>
+        <li>File Integrity Monitoring (FIM) on critical VM config paths</li>
+      </ul>
+    </div>
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">🔐</div>
+        <div>
+          <div class="sec-title">Access Control</div>
+          <div class="sec-subtitle">Bastion · Zero-Trust Principles · MFA</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>Bastion is the <strong style="color:var(--text)">sole ingress</strong> to the MGMT VLAN — and even that path is scoped to one source host and port, not LAN broadly</li>
+        <li>Self-hosted Rustdesk — no external relay; session data stays on-prem</li>
+        <li>MGMT subnet sized at /28 to deliberately cap the blast radius of any future compromise</li>
+        <li>IoT has <strong style="color:var(--text)">zero routed path</strong> to LAN or MGMT — enforced at pfSense</li>
+        <li>VPN requires client certificate — password alone cannot authenticate</li>
+        <li>LDAP enforces centralized credential lifecycle across services</li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+<!-- THREAT MODEL -->
+<section id="threats">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(248,81,73,0.1)">⚠️</div>
+    <h2>Threat Model &amp; Mitigations</h2>
+  </div>
+  <p style="font-size:0.88rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.75rem;max-width:760px;">
+    The lab is designed around realistic threat scenarios. Each threat category below maps to one or more concrete mitigations already implemented in the environment.
+  </p>
+  <div class="threat-grid">
+    <div class="threat-card">
+      <div class="threat-title">Compromised IoT Device</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">e.g. vulnerable firmware, default credentials</div>
+      <ul class="threat-mitigations">
+        <li>VLAN 20 has no path to LAN or MGMT — lateral movement blocked at L3</li>
+        <li>pfBlockerNG blocks C2 domain resolution before TCP connection forms</li>
+        <li>Suricata detects anomalous outbound traffic patterns from IoT net</li>
+        <li>Wazuh alerts on any cross-VLAN traffic that bypasses rules</li>
+      </ul>
+    </div>
+    <div class="threat-card">
+      <div class="threat-title">External Brute Force / Scanning</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">e.g. SSH scans, VPN password spray</div>
+      <ul class="threat-mitigations">
+        <li>WAN default-deny — only UDP 1194 (OpenVPN) exposed externally</li>
+        <li>VPN requires client certificate; password alone is insufficient</li>
+        <li>Suricata detects port scans and known scanner signatures</li>
+        <li>Wazuh brute force rule triggers Slack alert on auth failure threshold</li>
+        <li>GeoIP pfBlockerNG restricts inbound by country-of-origin</li>
+      </ul>
+    </div>
+    <div class="threat-card">
+      <div class="threat-title">Compromised LAN Workstation</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">e.g. phishing, drive-by download</div>
+      <ul class="threat-mitigations">
+        <li>LAN → MGMT is default-deny, with one narrow, documented exception scoped to a single host and port — not a general path</li>
+        <li>Bastion is the only MGMT ingress; reaching it from any other LAN device would require a second, separate compromise</li>
+        <li>pfBlockerNG blocks malware domain resolution on LAN</li>
+        <li>Suricata detects C2 beaconing and exploit kit traffic on LAN egress</li>
+        <li>Wazuh FIM detects if critical files are modified</li>
+      </ul>
+    </div>
+    <div class="threat-card">
+      <div class="threat-title">Credential Theft / Reuse</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">e.g. stolen password used to access services</div>
+      <ul class="threat-mitigations">
+        <li>LDAP (AD DS on the Hyper-V host) centralizes credentials — one place to disable a compromised account</li>
+        <li>VPN requires certificate + credentials; password alone is not enough</li>
+        <li>All admin access to pfSense and Wazuh is logged and audited</li>
+      </ul>
+    </div>
+    <div class="threat-card">
+      <div class="threat-title">DNS-Based Attacks</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">e.g. DNS tunneling, malware C2 via DNS, typosquatting</div>
+      <ul class="threat-mitigations">
+        <li>pfBlockerNG DNSBL sinkholes malicious domains at resolver level</li>
+        <li>DNS-over-TLS to upstream resolver prevents interception/manipulation</li>
+        <li>Wazuh rule detects abnormally long DNS query labels (tunneling signal)</li>
+        <li>Suricata DNS anomaly rules catch protocol-level tunneling patterns</li>
+      </ul>
+    </div>
+    <div class="threat-card">
+      <div class="threat-title">Unauthorized Physical / VLAN Access</div>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">e.g. rogue device plugged into switch, VLAN hopping</div>
+      <ul class="threat-mitigations">
+        <li>Managed switch enforces 802.1Q VLAN boundaries</li>
+        <li>MGMT uses static DHCP assignments</li>
+        <li>Unused ports are in the disabled state</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- LOG FLOW -->
+<section id="logs">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(240,136,62,0.1)">📊</div>
+    <h2>Log &amp; Alert Flow</h2>
+  </div>
+
+  <div class="log-flow">
+    <div class="flow-row">
+      <!-- Log Sources -->
+      <div class="flow-fork">
+        <div class="flow-node">
+          <div class="flow-node-name">pfSense</div>
+          <div class="flow-node-detail">
+            Suricata alerts · Firewall events · OpenVPN connections · DHCP leases
+          </div>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-name">Windows Server Agent</div>
+          <div class="flow-node-detail">
+            Security logs · Sysmon · PowerShell · Defender events
+          </div>
+        </div>
+		<div class="flow-node">
+          <div class="flow-node-name">Windows Host Agents</div>
+          <div class="flow-node-detail">
+            Security logs · Sysmon · PowerShell · Defender events
+          </div>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-name">Linux Agents</div>
+          <div class="flow-node-detail">
+            Auth logs · Syslog · Service monitoring
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow">──▶</div>
+      <!-- SIEM -->
+      <div class="flow-node">
+        <div class="flow-node-name">Wazuh SIEM</div>
+        <div class="flow-node-detail">
+          Agent monitoring · Syslog ingestion · Correlation rules · Threat detection
+        </div>
+      </div>
+      <div class="flow-arrow">──▶</div>
+      <!-- Outputs -->
+      <div class="flow-fork">
+        <div class="flow-node">
+          <div class="flow-node-name">Wazuh Dashboard</div>
+          <div class="flow-node-detail">
+            Security investigations · MITRE ATT&amp;CK mapping · Event timeline
+          </div>
+        </div>
+        <div class="flow-node" style="border-color:rgba(63,185,80,0.4)">
+          <div class="flow-node-name" style="color:var(--green)">
+            Slack Channel
+          </div>
+          <div class="flow-node-detail">
+            Critical alerts · Detection notifications · Incident escalation
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(57,197,207,0.1)">⚡</div>
+    <h2>Skills Demonstrated</h2>
+  </div>
+  <div class="skills-grid">
+    <div class="skill-group">
+      <div class="skill-group-title">Network Engineering</div>
+      <div class="skill-tags">
+        <span class="skill-tag">VLAN Segmentation</span>
+        <span class="skill-tag">802.1Q Trunking</span>
+        <span class="skill-tag">Inter-VLAN Routing</span>
+        <span class="skill-tag">DHCP / DNS</span>
+        <span class="skill-tag">Subnetting</span>
+        <span class="skill-tag">Nginx</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Firewall &amp; Security</div>
+      <div class="skill-tags">
+        <span class="skill-tag">pfSense</span>
+        <span class="skill-tag">Suricata IDS/IPS</span>
+        <span class="skill-tag">pfBlockerNG</span>
+        <span class="skill-tag">Firewall Rule Design</span>
+        <span class="skill-tag">Defense in Depth</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Virtualization</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Hyper-V</span>
+        <span class="skill-tag">Virtual Switches</span>
+        <span class="skill-tag">VM Networking</span>
+        <span class="skill-tag">Windows Server</span>
+        <span class="skill-tag">NIC Teaming</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">SIEM &amp; Monitoring</div>
+      <div class="skill-tags">
+        <span class="skill-tag">Wazuh</span>
+        <span class="skill-tag">Log Aggregation</span>
+        <span class="skill-tag">Alert Correlation</span>
+        <span class="skill-tag">Slack Webhooks</span>
+        <span class="skill-tag">Syslog</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Remote Access</div>
+      <div class="skill-tags">
+        <span class="skill-tag">OpenVPN</span>
+        <span class="skill-tag">Certificate Auth</span>
+        <span class="skill-tag">Rustdesk</span>
+        <span class="skill-tag">Bastion Host</span>
+        <span class="skill-tag">Dynamic DNS</span>
+      </div>
+    </div>
+    <div class="skill-group">
+      <div class="skill-group-title">Identity &amp; Access</div>
+      <div class="skill-tags">
+        <span class="skill-tag">LDAP Integration</span>
+        <span class="skill-tag">Centralized Auth</span>
+        <span class="skill-tag">Zero-Trust Principles</span>
+        <span class="skill-tag">Least Privilege</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- TOP SECURITY FUNCTIONS -->
+<section id="security-functions">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(248,81,73,0.1)">🎯</div>
+    <h2>Top Security Functions</h2>
+  </div>
+
+  <div class="security-grid">
+
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">🔒</div>
+        <div>
+          <div class="sec-title">Administrative Isolation</div>
+          <div class="sec-subtitle">Management VLAN + Bastion Host</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>Dedicated MGMT network isolated from user traffic</li>
+        <li>Single controlled ingress point through Bastion Host</li>
+        <li>Prevents direct administrative access from LAN systems</li>
+        <li>Reduces lateral movement opportunities</li>
+      </ul>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">🌐</div>
+        <div>
+          <div class="sec-title">Network Segmentation</div>
+          <div class="sec-subtitle">Default-Deny Architecture</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>LAN, IoT, and MGMT operate as separate trust zones</li>
+        <li>Inter-VLAN communication requires explicit firewall rules</li>
+        <li>Compromised devices remain contained to their segment</li>
+        <li>Zero-trust-inspired access control model</li>
+      </ul>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">📡</div>
+        <div>
+          <div class="sec-title">Detection & Monitoring</div>
+          <div class="sec-subtitle">Wazuh + Suricata</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>Centralized security telemetry collection</li>
+        <li>Network IDS/IPS inspection and alerting</li>
+        <li>Windows, Linux, VPN, and firewall event correlation</li>
+        <li>Slack-based incident notification workflow</li>
+      </ul>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">🛡️</div>
+        <div>
+          <div class="sec-title">Identity Security</div>
+          <div class="sec-subtitle">AD DS + Certificate Authentication</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>Centralized authentication through Active Directory, running as a role on the Hyper-V host</li>
+        <li>Certificate-based OpenVPN authentication</li>
+        <li>LDAP integration for infrastructure services</li>
+        <li>Centralized account lifecycle management</li>
+      </ul>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">⛔</div>
+        <div>
+          <div class="sec-title">DNS Security &amp; Threat Filtering</div>
+          <div class="sec-subtitle">pfBlockerNG · DNSBL · GeoIP · DoT</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>DNSBL sinkholes resolution of known-malicious domains before any connection forms</li>
+        <li>GeoIP blocking restricts inbound exposure by country of origin</li>
+        <li>DNS-over-TLS to the upstream resolver prevents on-path interception or manipulation</li>
+        <li>Closes off DNS as a viable command-and-control or exfiltration channel</li>
+      </ul>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-header">
+        <div class="sec-icon">🔑</div>
+        <div>
+          <div class="sec-title">Secure Remote Access</div>
+          <div class="sec-subtitle">OpenVPN + Self-Hosted Rustdesk</div>
+        </div>
+      </div>
+      <ul class="sec-features">
+        <li>Certificate-based OpenVPN — a stolen password alone cannot authenticate</li>
+        <li>Split-tunnel scoped to the LAN subnet only, never full network access</li>
+        <li>Self-hosted Rustdesk relay keeps session traffic on-prem, with no third-party relay in the path</li>
+        <li>Removes a common supply-chain dependency: trusting an external vendor's relay infrastructure</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- DESIGN DECISIONS -->
+<section id="decisions">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(210,153,34,0.1)">💭</div>
+    <h2>Design Decisions</h2>
+  </div>
+
+  <div class="decisions">
+
+<div class="decision">
+  <div class="decision-q">Why isolate infrastructure inside a dedicated Management VLAN?</div>
+  <div class="decision-a">
+    Administrative systems represent the highest-value assets in the environment. All management interfaces, including pfSense, Wazuh, Hyper-V, and Active Directory services, reside within a dedicated management network that is inaccessible from user and IoT segments by default. Access is restricted through a bastion host, creating a separate administrative security boundary that significantly reduces opportunities for lateral movement following workstation compromise.
+    <br><br>
+    The one deliberate exception is a single firewall rule allowing a specific Rustdesk session on LAN to reach the Bastion's admin port — nothing else on LAN can. Pure isolation isn't operationally realistic for a one-person lab; the goal was to make the exception as narrow as possible and document why it exists, rather than pretend it doesn't.
+    <br><br>
+    <strong>Security Principles:</strong> Defense-in-Depth, Least Privilege, Administrative Segmentation
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1021 (Remote Services), T1078 (Valid Accounts), T1210 (Exploitation of Remote Services)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why implement default-deny VLAN segmentation?</div>
+  <div class="decision-a">
+    The network is designed using zero-trust principles where trust is never inherited based solely on network location. LAN, IoT, and Management segments are isolated using VLANs and restrictive firewall policies. All inter-VLAN communication requires explicit authorization, preventing compromised devices from freely traversing the environment and limiting the blast radius of a security incident.
+    <br><br>
+    <strong>Security Principles:</strong> Zero Trust, Network Segmentation, Least Functionality
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1570 (Lateral Tool Transfer), T1046 (Network Service Discovery), T1021 (Remote Services)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why use certificate-based VPN authentication?</div>
+  <div class="decision-a">
+    Remote access represents one of the most common attack vectors for both enterprise and home environments. OpenVPN requires both user credentials and client certificates, ensuring that password compromise alone cannot provide network access. Combined with limited subnet exposure and centralized authentication, this approach significantly reduces the effectiveness of brute-force attacks, password spraying, and credential reuse.
+    <br><br>
+    <strong>Security Principles:</strong> Strong Authentication, Identity-Centric Security
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1110 (Brute Force), T1078 (Valid Accounts), T1133 (External Remote Services)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why centralize monitoring through Wazuh?</div>
+  <div class="decision-a">
+    Detection and response capabilities are built around centralized visibility. Security telemetry from Windows systems, Linux hosts, pfSense, Suricata, VPN services, and network infrastructure is aggregated into Wazuh for correlation, alerting, and investigation. This enables faster detection of malicious activity while providing MITRE ATT&amp;CK mapping, audit trails, and incident response workflows comparable to enterprise SOC operations.
+    <br><br>
+    <strong>Security Principles:</strong> Continuous Monitoring, Detection Engineering, Defense-in-Depth
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> Coverage across Initial Access, Execution, Persistence, Privilege Escalation, Credential Access, Discovery, Lateral Movement, Command &amp; Control, and Exfiltration tactics.
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why enforce DNS filtering and resolver control?</div>
+  <div class="decision-a">
+    DNS is a frequent command-and-control channel used by malware and adversaries. All client DNS traffic is redirected to pfSense and processed through pfBlockerNG, preventing devices from bypassing security controls through external resolvers. DNSBL sinkholing, threat intelligence feeds, and encrypted upstream DNS significantly reduce exposure to malicious infrastructure and DNS-based command-and-control activity.
+    <br><br>
+    <strong>Security Principles:</strong> Secure Name Resolution, Preventive Controls
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1071.004 (DNS), T1568 (Dynamic Resolution), T1008 (Fallback Channels)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why size the Management VLAN as a /28 instead of a /24?</div>
+  <div class="decision-a">
+    A larger subnet is the default reflex, but a /28 (16 usable addresses) was a deliberate choice. Every address is small enough to track manually and audit by hand — there's no ambiguity about whether a given IP belongs to a known device. It also caps what a network scan from a compromised host could ever discover on that segment, since the address space itself is part of the limiting factor, not just firewall policy.
+    <br><br>
+    <strong>Security Principles:</strong> Least Functionality, Blast Radius Reduction, Asset Auditability
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1018 (Remote System Discovery), T1590 (Gather Victim Network Information)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why route inter-VLAN traffic through pfSense instead of switch-level ACLs?</div>
+  <div class="decision-a">
+    A managed switch could enforce VLAN ACLs on its own, but that traffic would never be inspected — only allowed or blocked at layer 2/3 with no visibility into what it actually was. Routing every VLAN through pfSense means every inter-segment packet also passes through Suricata, so policy enforcement and intrusion detection happen at the same chokepoint instead of two disconnected layers that could drift out of sync over time.
+    <br><br>
+    <strong>Security Principles:</strong> Centralized Inspection, Visibility-by-Design, Defense-in-Depth
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1046 (Network Service Discovery), T1021 (Remote Services)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why forward Wazuh alerts to Slack instead of relying on the dashboard alone?</div>
+  <div class="decision-a">
+    A SIEM nobody is actively watching is just an expensive log archive. Severity-filtered Slack alerts mean critical and high-severity detections — auth failure thresholds, cross-VLAN violations, FIM changes — surface immediately instead of waiting to be noticed on the next dashboard review. Filtering by severity at the webhook, rather than forwarding everything, keeps the channel meaningful instead of becoming background noise that gets tuned out — which is its own detection-evasion risk.
+    <br><br>
+    <strong>Security Principles:</strong> Continuous Monitoring, Reducing Dwell Time, Alert Fidelity
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1078 (Valid Accounts), T1562 (Impair Defenses) — alert fatigue is functionally a self-inflicted version of this technique
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why self-host Rustdesk instead of using a commercial remote-access tool?</div>
+  <div class="decision-a">
+    Commercial remote-access tools route session traffic through a third-party relay by default, which means trusting that vendor's infrastructure, uptime, and security posture. Self-hosting the relay keeps all session data on-prem and removes a dependency that's outside this network's control — a meaningful consideration given how often remote-access software itself becomes the attack vector rather than the thing being defended.
+    <br><br>
+    <strong>Security Principles:</strong> Reducing Third-Party Trust, Data Locality, Supply Chain Risk Reduction
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1219 (Remote Access Software)
+  </div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why disable unused switch ports and use static DHCP reservations on MGMT?</div>
+  <div class="decision-a">
+    Both are small, unglamorous controls that close a real gap: an open switch port is an invitation for a rogue device, and dynamic DHCP on a sensitive segment means any device that gets physical access also gets an IP. Disabling unused ports and reserving addresses by MAC on MGMT means a device has to be known and provisioned before it can talk on that network at all.
+    <br><br>
+    <strong>Security Principles:</strong> Physical Security, Least Functionality, Asset Visibility
+    <br>
+    <strong>MITRE ATT&amp;CK:</strong> T1200 (Hardware Additions)
+  </div>
+</div>
+
+  </div>
+</section>
+
+
+<footer>
+  <div class="footer-links">
+    <a href="mailto:chris@bates.contact">Email</a>
+    <a href="https://linkedin.com/in/chris-bat3s">LinkedIn</a>
+  </div>
+  <p style="margin-top:0.5rem">Built and documented as a hands-on SOC analyst training environment.</p>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1c2128',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#30363d',
+      lineColor: '#58a6ff',
+      secondaryColor: '#161b22',
+      tertiaryColor: '#0d1117',
+      edgeLabelBackground: '#161b22',
+      clusterBkg: '#1c2128',
+      clusterBorder: '#30363d',
+      titleColor: '#e6edf3',
+      nodeTextColor: '#e6edf3',
+    },
+    flowchart: {
+      curve: 'basis',
+      htmlLabels: true,
+    }
+  });
+</script>
+</body>
+</html>
