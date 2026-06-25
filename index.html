@@ -1566,13 +1566,11 @@ flowchart TD
 <div class="decision">
   <div class="decision-q">Why isolate infrastructure inside a dedicated Management VLAN?</div>
   <div class="decision-a">
-    Administrative systems represent the highest-value assets in the environment. All management interfaces, including pfSense, Wazuh, Hyper-V, and Active Directory services, reside within a dedicated management network that is inaccessible from user and IoT segments by default. Access is restricted through a bastion host, creating a separate administrative security boundary that significantly reduces opportunities for lateral movement following workstation compromise.
+    Administrative systems represent the highest-value assets in the environment. All management interfaces, pfSense, Wazuh, and bastion host reside within a dedicated management network that is inaccessible from user and IoT segments by default. Access is restricted through a bastion host, creating a separate administrative security boundary that significantly reduces opportunities for lateral movement following workstation compromise.
     <br><br>
     The one deliberate exception is a single firewall rule allowing a specific Rustdesk session on LAN to reach the Bastion's admin port — nothing else on LAN can. Pure isolation isn't operationally realistic for a one-person lab; the goal was to make the exception as narrow as possible and document why it exists, rather than pretend it doesn't.
     <br><br>
     <strong>Security Principles:</strong> Defense-in-Depth, Least Privilege, Administrative Segmentation
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1021 (Remote Services), T1078 (Valid Accounts), T1210 (Exploitation of Remote Services)
   </div>
 </div>
 
@@ -1582,8 +1580,6 @@ flowchart TD
     The network is designed using zero-trust principles where trust is never inherited based solely on network location. LAN, IoT, and Management segments are isolated using VLANs and restrictive firewall policies. All inter-VLAN communication requires explicit authorization, preventing compromised devices from freely traversing the environment and limiting the blast radius of a security incident.
     <br><br>
     <strong>Security Principles:</strong> Zero Trust, Network Segmentation, Least Functionality
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1570 (Lateral Tool Transfer), T1046 (Network Service Discovery), T1021 (Remote Services)
   </div>
 </div>
 
@@ -1593,8 +1589,6 @@ flowchart TD
     Remote access represents one of the most common attack vectors for both enterprise and home environments. OpenVPN requires both user credentials and client certificates, ensuring that password compromise alone cannot provide network access. Combined with limited subnet exposure and centralized authentication, this approach significantly reduces the effectiveness of brute-force attacks, password spraying, and credential reuse.
     <br><br>
     <strong>Security Principles:</strong> Strong Authentication, Identity-Centric Security
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1110 (Brute Force), T1078 (Valid Accounts), T1133 (External Remote Services)
   </div>
 </div>
 
@@ -1604,8 +1598,6 @@ flowchart TD
     Detection and response capabilities are built around centralized visibility. Security telemetry from Windows systems, Linux hosts, pfSense, Suricata, VPN services, and network infrastructure is aggregated into Wazuh for correlation, alerting, and investigation. This enables faster detection of malicious activity while providing MITRE ATT&amp;CK mapping, audit trails, and incident response workflows comparable to enterprise SOC operations.
     <br><br>
     <strong>Security Principles:</strong> Continuous Monitoring, Detection Engineering, Defense-in-Depth
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> Coverage across Initial Access, Execution, Persistence, Privilege Escalation, Credential Access, Discovery, Lateral Movement, Command &amp; Control, and Exfiltration tactics.
   </div>
 </div>
 
@@ -1615,41 +1607,15 @@ flowchart TD
     DNS is a frequent command-and-control channel used by malware and adversaries. All client DNS traffic is redirected to pfSense and processed through pfBlockerNG, preventing devices from bypassing security controls through external resolvers. DNSBL sinkholing, threat intelligence feeds, and encrypted upstream DNS significantly reduce exposure to malicious infrastructure and DNS-based command-and-control activity.
     <br><br>
     <strong>Security Principles:</strong> Secure Name Resolution, Preventive Controls
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1071.004 (DNS), T1568 (Dynamic Resolution), T1008 (Fallback Channels)
-  </div>
-</div>
-
-<div class="decision">
-  <div class="decision-q">Why size the Management VLAN as a /28 instead of a /24?</div>
-  <div class="decision-a">
-    A larger subnet is the default reflex, but a /28 (16 usable addresses) was a deliberate choice. Every address is small enough to track manually and audit by hand — there's no ambiguity about whether a given IP belongs to a known device. It also caps what a network scan from a compromised host could ever discover on that segment, since the address space itself is part of the limiting factor, not just firewall policy.
-    <br><br>
-    <strong>Security Principles:</strong> Least Functionality, Blast Radius Reduction, Asset Auditability
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1018 (Remote System Discovery), T1590 (Gather Victim Network Information)
-  </div>
-</div>
-
-<div class="decision">
-  <div class="decision-q">Why route inter-VLAN traffic through pfSense instead of switch-level ACLs?</div>
-  <div class="decision-a">
-    A managed switch could enforce VLAN ACLs on its own, but that traffic would never be inspected — only allowed or blocked at layer 2/3 with no visibility into what it actually was. Routing every VLAN through pfSense means every inter-segment packet also passes through Suricata, so policy enforcement and intrusion detection happen at the same chokepoint instead of two disconnected layers that could drift out of sync over time.
-    <br><br>
-    <strong>Security Principles:</strong> Centralized Inspection, Visibility-by-Design, Defense-in-Depth
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1046 (Network Service Discovery), T1021 (Remote Services)
   </div>
 </div>
 
 <div class="decision">
   <div class="decision-q">Why forward Wazuh alerts to Slack instead of relying on the dashboard alone?</div>
   <div class="decision-a">
-    A SIEM nobody is actively watching is just an expensive log archive. Severity-filtered Slack alerts mean critical and high-severity detections — auth failure thresholds, cross-VLAN violations, FIM changes — surface immediately instead of waiting to be noticed on the next dashboard review. Filtering by severity at the webhook, rather than forwarding everything, keeps the channel meaningful instead of becoming background noise that gets tuned out — which is its own detection-evasion risk.
+    A SIEM nobody is actively watching is just an log archive. Severity filtered Slack alerts mean critical and high-severity detections — auth failure thresholds, cross-VLAN violations, FIM changes — surface immediately instead of waiting to be noticed on the next dashboard review. Filtering by severity at the webhook, rather than forwarding everything, keeps the channel meaningful instead of becoming background noise that gets tuned out — which is its own detection-evasion risk.
     <br><br>
     <strong>Security Principles:</strong> Continuous Monitoring, Reducing Dwell Time, Alert Fidelity
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1078 (Valid Accounts), T1562 (Impair Defenses) — alert fatigue is functionally a self-inflicted version of this technique
   </div>
 </div>
 
@@ -1659,8 +1625,6 @@ flowchart TD
     Commercial remote-access tools route session traffic through a third-party relay by default, which means trusting that vendor's infrastructure, uptime, and security posture. Self-hosting the relay keeps all session data on-prem and removes a dependency that's outside this network's control — a meaningful consideration given how often remote-access software itself becomes the attack vector rather than the thing being defended.
     <br><br>
     <strong>Security Principles:</strong> Reducing Third-Party Trust, Data Locality, Supply Chain Risk Reduction
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1219 (Remote Access Software)
   </div>
 </div>
 
@@ -1670,8 +1634,6 @@ flowchart TD
     Both are small, unglamorous controls that close a real gap: an open switch port is an invitation for a rogue device, and dynamic DHCP on a sensitive segment means any device that gets physical access also gets an IP. Disabling unused ports and reserving addresses by MAC on MGMT means a device has to be known and provisioned before it can talk on that network at all.
     <br><br>
     <strong>Security Principles:</strong> Physical Security, Least Functionality, Asset Visibility
-    <br>
-    <strong>MITRE ATT&amp;CK:</strong> T1200 (Hardware Additions)
   </div>
 </div>
 
